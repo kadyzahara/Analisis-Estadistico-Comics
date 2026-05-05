@@ -1,0 +1,416 @@
+---
+title: "COMPARAR LAS APARICIONES DE LOS PERSONAJES DE MARVEL Y DC, PARA CONSIDERAR QUE PERSONAJES SON MÁS CONOCIDOS Y QUE ROL PREDOMINA EN ELLOS"
+author: "Kadija Rodríguez"
+date: "2023-11-26"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(dplyr)
+library(tidyverse)
+library(RColorBrewer)
+library(readxl)
+library(gridExtra)
+library(corrplot)
+library(magrittr)
+library(lubridate)
+library(rstatix)
+library(knitr)
+
+
+#ubicación del df
+Comics_G5_1_ <- read_csv("Comics G5 (1).csv")
+
+#ubicación de la base de datos a modificar
+Comics_G5_2_ <- read_csv("Comics G5 (2).csv")
+```
+
+```{r echo=FALSE}
+
+#MODIFICACIÓN DE LA BASE DE DATOS
+# Quitando los NA
+
+Comics_G5_2_ <- Comics_G5_2_ %>% filter(!is.na(first_appear))
+
+# Función para verificar si una fecha tiene información del mes en formato "%Y, %B"
+tiene_mes <- function(fecha) {
+  partes_fecha <- unlist(strsplit(fecha, ", "))
+  
+  # Verificar si la fecha tiene el formato "%Y, %B" y contiene información del mes
+  if (length(partes_fecha) == 2 && grepl("[A-Za-z]+", partes_fecha[2])) {
+    return(TRUE)
+  } else {
+    return(FALSE)
+  }
+}
+
+# Vector con los nombres de los meses en inglés
+
+df_Y_B <- Comics_G5_2_[sapply(Comics_G5_2_$first_appear, tiene_mes), ]
+
+```
+
+
+```{r echo=FALSE}
+# Función para verificar si una fecha tiene información del mes en formato "%b, %y"
+
+tiene_mes2 <- function(fecha) {
+  partes_fecha <- unlist(strsplit(fecha, "-"))
+  
+  # Verificar si la fecha tiene el formato "%B, %Y" y contiene información del mes
+  
+  if (length(partes_fecha) == 2 && grepl("[A-z, 0-9]+", partes_fecha[2])) {
+    return(TRUE)
+  } else {
+    return(FALSE)
+  }
+}
+
+# Vector con los nombres de los meses en inglés
+df_b_y <- Comics_G5_2_[sapply(Comics_G5_2_$first_appear, tiene_mes2), ]
+
+```
+
+```{r echo=FALSE}
+#cambiar el formato de la base de datos de %Y, %B a %b-%y
+
+suppressWarnings({df_Y_B$first_appear <- parse_date_time(df_Y_B$first_appear, orders = "%Y, %B")
+df_Y_B$first_appear <- format(df_Y_B$first_appear, "%b-%y")}) 
+
+```
+
+
+```{r echo=FALSE}
+#cambiar el formato de la base original (carácter a date)
+df_b_y$appearances = as.Date("Aug-62", format = "%b-%y")
+```
+
+
+```{r echo=FALSE}
+#cambiar el formato de la base original (carácter a date)
+df_Y_B$appearances = as.Date("Aug-62", format = "%b-%y")
+
+```
+
+```{r echo=FALSE}
+#unir las nuevas bases de datos en formato date para obtener una base de datos con las fechas en un solo formato
+
+fechas_bien <- rbind(df_b_y,df_Y_B)
+```
+
+```{r echo=FALSE}
+# eliminar las variables que no se utilizaran del df original
+
+Comics_G5_1_<- subset(Comics_G5_1_, select = -hair)
+Comics_G5_1_<- subset(Comics_G5_1_, select = -eye)
+Comics_G5_1_<- subset(Comics_G5_1_, select = -alive)
+Comics_G5_1_<- subset(Comics_G5_1_, select = -gsm)
+Comics_G5_1_<- subset(Comics_G5_1_, select = -first_appear)
+```
+
+```{r echo=FALSE}
+# omitir datos N.A
+Comics_G5_1_<- na.omit(Comics_G5_1_)
+```
+
+```{r echo=FALSE}
+# base de datos filtrada por las editoriales
+#marvel
+marvel_comics <- Comics_G5_1_ %>%
+  filter(publisher == "marvel")
+#DC
+dc_comics <- Comics_G5_1_ %>%
+  filter(publisher == "dc")
+
+#base de datos de las editoriales con los personajes mas populares
+
+#marvel
+populares_en_marvel <- marvel_comics %>%
+  filter(appearances >=2000)
+
+populares_en_marvel2 <- marvel_comics %>%
+  filter(appearances >=1000)
+#dc
+populares_en_dc <- dc_comics %>%
+  filter(appearances >=1000)
+
+#populares en ambas editoriales
+marvel_dc <- Comics_G5_1_ %>%
+  filter(appearances >=1000)
+
+```
+
+# RESUMEN
+
+Actualmente existen cientos de publicaciones, encargadas de llevar a otros mundos y universos la imaginación, algunas con más renombre que otras, pero no pasarán desapercibido dos de ellas en particular son: DC Comics y Marvel Comics. Cada una de las editoriales se desarrollan de manera distinta, por una parte la historia de los superhéroes de Marvel es larga y rica, y ha abarcado muchas décadas y medios diferentes. Desde sus primeros días en la década de 1960 hasta la actualidad, los personajes de Marvel han sido amados por generaciones de fans en todo el mundo, y continúan siendo una parte importante de la cultura popular por otro lado DC Comic es una editorial estadounidense dedicada a la realización y venta de cómics fundada en 1937. Las iniciales DC son una abreviatura de Detective Comics, uno de los primeros títulos emblemáticos de la compañía. Ambas editoriales desde la creación de sus primeros superhéroes y villanos, al día de hoy, permanecen en la constante competencia de ofrecer el mejor entretenimiento a sus fans. Es así como los personajes de comics normalmente tienen súper poderes, y el mensaje central que hacen llegar a los individuos es acerca de la lucha del bien contra el mal.
+
+
+# PLANTEAMIENTO DEL PROBLEMA
+
+
+El cómic es un subgénero literario que va acompañado de ilustraciones. Las historias de los cómics están protagonizadas por héroes, también conocidos como superhéroes porque poseen cualidades extraordinarias. Cada editorial tiene sus propios héroes y villanos, para entender a que se le refiere con superhéroes se debe explicar que un son personajes ficticios que poseen habilidades sobresalientes y que utilizan estas habilidades para proteger a los inocentes y luchar contra el crimen además de villanos, con el fin de utilizar sus habilidades con el objetivo de perjudicar a alguien. 
+Marvel y DC Comics son dos de las editoriales de cómics más importantes del mundo, y han creado algunos de los superhéroes más icónicos de la historia, como Superman, Batman, Spider-Man y la Mujer Maravilla. El Universo Marvel y DC está plagado de héroes, pero también de villanos, como thanos, Ultron, lex luthor, the Joker, entre otros.
+
+En el terreno de los cómics, DC aparecería primero en escena. DC Comics es una editorial estadounidense dedicada a la realización y venta de cómics fundada en 1934 con el nombre de National Allied Publications para luego tomar el nombre de DC Comics en 1937, la franquicia desbancó en el género de superhéroes con la serie Action Comics, el primer número de Superman. Poco tiempo después de  Superman llegaría Batman, Wonder Woman y Green lanter.
+ Luego encontramos a Marvel Comics o como se llamaba antes Timely Cómics es una editorial de cómics que debutó con Marvel Comics presentando como sus primeros personajes a namor, la antorcha humana y el Ángel en 1939. Los superhéroes Marvel comparten desde sus inicios un mismo espacio y tiempo; cualquier personaje puede aparecer en otra colección de la editorial y las aventuras que viven en esta continúan en su serie. 
+ 
+ 
+Desde niños las personas se sienten atraídas hacia la idea de que existan seres extraordinarios con poderes sobrehumanos, pensar en las implicaciones morales y las responsabilidades que conllevaría poseer un “don” que destaque frente al humano promedio. Dada toda esta ilusión se plantea Comparar las apariciones de los superhéroes de Marvel y DC comics, para considerar que personajes son más conocidos y que rol predomina en ellos. De acuerdo con esto, se desprenden las siguientes interrogantes: 
+
+1. ¿Cuáles son los personajes que más conocidos según sus apariciones de Marvel y DC comics?
+
+2. Determinar la cantidad de villanos, neutral y héroes en Marvel en comparación con DC cómics
+
+3. Determinar cuántos personajes con identidad secreta o pública tiene Marvel y DC cómics. 
+
+4. Según la cantidad de apariciones de los personajes de Marvel y DC ¿Qué editorial es más popular?
+
+\newpage
+
+# Análisis Estadístico
+
+
+## 1. ¿Cuáles son los personajes más conocidos según sus apariciones de Marvel y DC comics?
+
+
+
+### Personajes de Dc comics
+
+
+```{r echo=FALSE}
+# gráfico de barras para dc
+ggplot(data=populares_en_dc, aes(x= reorder(name, appearances), y= appearances, fill=name)) + geom_bar(stat = "identity") + scale_fill_manual(values= c("#78AE6D",  "#09622A", "#6FAA66", "#469A4D", "#329243", "#237C38",  "#0D652C", "#93BA82", "#66A65F", "#11692D", "#A3C395")) + theme_minimal() + ggtitle("Personajes con más apriciones de DC comics") + labs(x="nombre", y="apariciones")+ coord_flip() + geom_text(aes(label = appearances), vjust = -0.6, colour = "black")+ theme(legend.position = "none")+theme(plot.title = element_text(family = "serif",
+                                  size = rel(1.5),
+                                  vjust = 0.5 , hjust = 0.5,
+                                  face = "italic",
+                                  color = "black",
+                                  lineheight = 1.5))
+```
+En éste gráfico se puede apreciar los personajes de DC que tuvieron más apariciones en los comics, dando asÍ a conocer nombres de los personajes más renombrados de ésta editorial, el resultado de ésta comparación entre los personajes de dc comics nos dice que "Batman" con 3093 apariciones a lo largo de las publicaciones.
+
+
+```{r echo=FALSE}
+ggplot(data=populares_en_marvel, aes(x= reorder(name, appearances), y= appearances, fill=name)) + geom_bar(stat = "identity") + scale_fill_manual(values= c("#FE8F7F", "#F26952", "#DD4A31", "#FDA297","#D13920", "#C11C06", "#F5CAC7","#BD1100")) + theme_minimal() + ggtitle("Personajes con más apariciones de Marvel") + labs(x="nombres", y="apariciones")+ coord_flip() + geom_text(aes(label = appearances), vjust = -0.6, colour = "black") + theme(legend.position = "none")+theme(plot.title = element_text(family = "serif",
+                                  size = rel(1.5),
+                                  vjust = 0.5 , hjust = 0.5,
+                                  face = "italic",
+                                  color = "black",
+                                  lineheight = 1.5)) 
+```
+ 
+ A continuación se presentan los personajes de la editorial de Comics Marvel con más apariciones en sus publicaciones, dando como resultado a un personajes muy emblemático como principal "Spiderman" logrando el lugar con 4093 apariciones y siendo uno de los más favoritos del público.
+
+\newpage
+
+
+#  2.¿Cuáles fueron los heroes, villanos y personajes neutrales con más apariciones en Marvel y Dc comics?
+
+
+### Rol predominante en dc comics
+
+```{r echo=FALSE}
+dc<- dc_comics %>%
+  group_by(align) %>%
+  count() %>%
+  ungroup() %>%
+  mutate(porcentaje = n/sum(n)*100)
+
+dcp <- round(dc$porcentaje, digits=2)
+
+porcentajesdc <- data.frame(dc$align, dc$n, dcp)
+
+kable(porcentajesdc)
+```
+
+```{r echo=FALSE}
+# filtrar los personajes heroes, villanos y neutrales mas populares en dc comics
+
+dc_align <- dc_comics[c(1,2,20,29,47,54),]
+```
+
+
+```{r echo=FALSE}
+#personajes heroes, villanos y neutrales mas populares en dc comics
+
+ggplot(data=dc_align, aes(x= reorder(name, appearances), y= appearances, fill=name)) + geom_bar(stat = "identity", position = "dodge") + scale_fill_manual(values= c("#00441B", "#A1D99B", "#A1D99B","#41AB5D","#238B45", "#006D2C")) + theme_minimal() + ggtitle("Heróes, villanos y personajes neutrales de DC") + labs(x="nombres", y="apariciones")+ geom_text(aes(label = align), vjust = -0.6, colour = "black")+ theme(legend.position = "none")+ theme(axis.text.x = element_text(angle = 10))+theme(plot.title = element_text(family = "serif",
+                                  size = rel(1.5),
+                                  vjust = 0.5 , hjust = 0.5,
+                                  face = "italic",
+                                  color = "black",
+                                  lineheight = 1.5)) 
+
+```
+ 
+ En éste gráfico se puede apreciar dos de los personajes con más apariciones de cada alineación "Héroes, Villano y personajes Neutrales" en la editorial de comics DC, uno de sus villanos favoritos es "The Jocker" con 517 apariciones es uno de los villanos más incomprendido de las publicaciones, además de no dejar atrás a sus  héroes favoritos como "Superman" con 2496 apariciones, y "El lobo" un personaje Neutral con 353 apariciones.
+
+\newpage
+
+###  Rol predominante en marvel comics
+
+```{r echo=FALSE}
+marvel<- marvel_comics %>%
+  group_by(align) %>%
+  count() %>%
+  ungroup() %>%
+  mutate(porcentaje = n/sum(n)*100)
+
+mvp <- round(marvel$porcentaje, digits=2)
+
+porcentajesmv <- data.frame(marvel$align, marvel$n, mvp)
+
+
+kable(porcentajesmv)
+
+```
+
+```{r echo=FALSE}
+
+# filtrar los personajes heroes, villanos y neutrales mas populares en marvel comics
+
+marvel_align <- marvel_comics[c(1,2,3,9,44,48),]
+```
+
+```{r echo=FALSE}
+
+ggplot(data=marvel_align, aes(x= reorder(name, appearances), y= appearances, fill=name)) + geom_bar(stat = "identity", position = "dodge" )+ scale_fill_manual(values= c("#FC8D59","#EF6548","#D7301F","#FDBB84","#B30000","#7F0000"))+ theme_minimal() + ggtitle("Héroes, villanos y personajes neutrales de marvel") + labs(x="nombres", y="apariciones")+ geom_text(aes(label = align), vjust = -0.6, colour = "black")+ theme(legend.position = "none")+theme(axis.text.x = element_text(angle = 10))+theme(plot.title = element_text(family = "serif",
+                                  size = rel(1.5),
+                                  vjust = 0.5 , hjust = 0.5,
+                                  face = "italic",
+                                  color = "black",
+                                  lineheight = 1.5)) 
+```
+
+ 
+ En el siguiente gráfico se refleja "Héroes, Villanos y personajes Neutrales" de la gran editorial Marvel comics, indicandonos que sus personajes favoritos son los Héroes,más sin embargo, ésta editorial ha desaroollado alineaciones de personajes inclinando su mayoría a los villanos, por otro lado tenemos a un héroe muy conocido "Capitan América" con apróximadamente 3360 apariciones en los comics o "Spider-man" con 4043 apariciones, otro resaltante es el personaje neutral querido por la industria "Wolverine" con 3061 apariciones y el villano más odiado
+"Victor von Doom" con 721 apariciones.
+
+\newpage
+
+# 3. Determinar cuántos personajes con identidad secreta o pública tiene Marvel y DC cómics.
+```{r echo=FALSE}
+library(knitr)
+```
+
+
+```{r echo=FALSE}
+table_mv <- table(Comics_G5_1_$id, Comics_G5_1_$publisher)
+kable(table_mv)
+```
+```{r echo=FALSE}
+mosaicplot(table_mv, color= c("#F59885", "#E44144"), 
+             main = "ID de los personajes de marvel y dc comics")
+```
+
+
+La identidad de los personajes de comics es importante para el desarrollo de la historia de los Héroes o villanos, en éste gráfico se hace una comparación en base a las editoriales de comics, la cual nos evidencia que Marvel comics encabeza la cantidad de personajes con identidad secreta y púplica de las editoriales, teniendo así 3495 personajes con identidad pública en comparación a DC comics el cual sólo tiene 2161, por otro lado Marvel tiene 3495 personajes con identidad pública y DC sólo cuenta con 2123, uno de los principales con identidad secreta es "Spider-man", y otro con identidad pública muy conocido es "Iroman".
+
+\newpage
+
+# 4. Según la cantidad de apariciones de los personajes de Marvel y DC ¿Qué editorial es más renombrada?
+
+
+## Personajes de Marvel y DC comics
+
+```{r echo=FALSE}
+porcentajes <- Comics_G5_1_ %>%
+  group_by(publisher) %>%
+  count() %>%
+  ungroup() %>%
+  mutate(porcentaje = n/sum(n)*100)
+
+kable(porcentajes)
+```
+
+```{r echo=FALSE}
+ggplot(data= porcentajes,
+       aes(x=3, y = porcentaje, fill= publisher))+
+  geom_bar(stat = "identity")+
+  geom_text(aes(label = paste(round (porcentaje,2),"%")),
+            position = position_stack(vjust = .5 ))+
+  coord_polar(theta = "y")+
+  theme_void()+ ggtitle("Personajes de Marvel Y DC comics")+ scale_fill_manual(values= c("#95B958", "#499851"))+theme(plot.title = element_text(family = "serif",
+                                  size = rel(1.5),
+                                  vjust = 0.5 , hjust = 0.5,
+                                  face = "italic",
+                                  color = "black",
+                                  lineheight = 1.5)) 
+```
+
+En éste gráfico se muestra la cantidad de personajes de cada editorial, dando como resultado a Marvel como la francicia de comics con más personajes para sus historietas, generando así más reconocimiento ya que se hacen más ventas de sus historietas dandose y de ésta manera se dan más a conocer entre el público.
+
+\newpage
+
+## Basado en todos los personajes de los comics, se hace una comparación entre los más populares de Marvel y DC comics
+
+
+```{r echo=FALSE}
+editorial_popular<- marvel_dc %>% group_by(publisher) %>% summarise(sumatoria=n())
+kable(editorial_popular)
+```
+
+## Cálculos de personajes con mas apariciones de marvel
+
+### DC comics
+```{r echo=FALSE}
+dc_populares<- populares_en_dc%>%
+  get_summary_stats(appearances, type = "full")
+kable(dc_populares)
+```
+
+### Marvel comics
+
+```{r echo=FALSE}
+marvel_populares<- populares_en_marvel2%>%
+  get_summary_stats(appearances, type = "full")
+kable(marvel_populares)
+```
+
+
+
+```{r echo=FALSE}
+ggplot(data = marvel_dc,
+       mapping = aes(x= publisher,
+                     y= appearances))+
+geom_boxplot(outlier.shape = , fill= "red", color= "black")+ theme_minimal() + ggtitle("Personajes de Marvel y DC comics con más apariciones") + labs(x="Editorial", y="Apariciones")+theme(plot.title = element_text(family = "serif",
+                                  size = rel(1.5),
+                                  vjust = 0.5 , hjust = 0.5,
+                                  face = "italic",
+                                  color = "black",
+                                  lineheight = 1.5)) 
+```
+   
+\newpage
+
+   A lo largo de los años ha destacado la competencia entre Marvel y DC para saber cuál es la editorial de comics más renombrada, en éste gráfico se observa una comparación entre los personajes con más apariciones entre ambas editoriales, dandonos como resultado que Marvel tiene un promedio de 1683.094 en cuanto a apariciones, por otro lado DC tiene un promedio de 1480.455 apariciones, de ésta manera nos indica que Marvel comics al tener un promedio de más apariciones es más conocido que DC, sin embargo son grandes editoriales que han llegado a fusionarse para grandes comics, ambas son las líderes de las historietas de superhéroes.
+
+\newpage
+
+# CONCLUSIONES
+
+Las editoriales Marvel y DC se pueden entender como dos empresas que compiten entre sí para atraer al público. Sin embargo, está justificado que ambas aparezcan juntas. Por una parte, en ocasiones se han recreado aventuras en las que los héroes Marvel comparten vivencias con los héroes DC. Por otro lado, entre los seguidores del universo Marvel y los del universo DC se ha creado una cierta rivalidad, algo similar a lo que ocurre entre los partidarios de Coca Cola o Pepsi, McDonald´s y Burger King, Apple y Microsoft y otras rivalidades comerciales entre marcas de primer orden. Cuando observamos las apariciones de los personajes más conocidos entre Marvel y DC, se aprecia que Marvel posee más personajes con mayor cantidad que apariciones que DC. Marvel, a partir de 1000 apariciones de los personajes, de los cuales 3 tienen más de 3000 apariciones siendo Spiderman "4043", Capitán América "3360" y Wolverine "3061", y DC teniendo solo once personajes con más de 1000 apariciones, los más renombrados son  Batman "3093 "y Superman "2496".
+
+Los roles de éstos personajes se dividen en Bueno, Malo y Neutral, dado el estudio realizado se determina que el rol predominante en DC son los héroes y Marvel es caracterizado porque tenga más personajes villanos a la hora del desarrollo de sus historieta, pero aun así contando con más apariciones los héroes, además de que las editoriales cuenten con diferentes maneras de  desenvolver los diferentes roles, teniendo personajes con identidad secreta, pública, o desconocida y como resultado Marvel lidera todas estas categorías, como estudio final se analizó en base a las apariciones que editorial de comics es más conocida, no hay duda que ambas compañías lideran las industrias de los comics, sin embargo, Marvel lidera éste estudio en el cual se demuestra que su editorial cuenta con más personajes y que de hecho son los personajes que tienen más apariciones en sus historietas.
+
+El momento que muchos fanáticos esperaban y es imaginar cada batalla entre los superhéroes de Marvel y los de DC. Llegado a este punto, las discusiones son infinitas porque ya no hay datos, estadísticas, ni cifras que nos indiquen que la balanza se está inclinando hacia un lado u otro. Podemos encontrar opiniones o análisis muy subjetivos de aficionados que prefieren más una marca que otra, Sin embargo, tomando en cuenta las apariciones de los personajes de cada editorial se llegó a la conclusión que Marvel y DC los líderes de la industria. Basado en el estudio realizado Marvel es la editorial más conocida y sus grandiosos personajes que cuentan con más apariciones son los más queridos por el público.
+
+\newpage
+
+# Referencias
+
+-https://r-charts.com/es/paletas-colores/#dinamicas
+
+-https://videojuegos.enriqueortegaburgos.com/marvel-vs-dc-3/
+
+-https://www.fotogramas.es/noticias-cine/g16456634/copias-superheroicas-personajes-de-marvel-y-dc-que-se-parecen-sospechosamente/
+
+-https://www.definicionabc.com/general/marvel-dc.php
+
+-https://es.quora.com/Cu%C3%A1les-son-algunas-diferencias-entre-Marvel-y-DC
+
+-https://www.univision.com/entretenimiento/geek/marvel-vs-dc-que-universo-tiene-la-magia-mas-poderosa
+
+
+
+
